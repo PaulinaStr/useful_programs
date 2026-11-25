@@ -46,7 +46,8 @@ $$
 $$
 
 $$
-A = \begin{pmatrix} a & b \\ c & d \end{pmatrix} 
+A = \begin{pmatrix} a & b \\ 
+c & d \end{pmatrix} 
 $$
 
 ### Fragment kodu w języku Python
