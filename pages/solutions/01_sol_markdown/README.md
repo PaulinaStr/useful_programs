@@ -26,7 +26,7 @@ Oto krótki tekst w ramach kolejnej podsekcji, w której prezentujemy elementy s
 ### Checklista
 - [x] Stworzenie dokumentu Markdown
 - [x] Dodanie wzorów matematycznych
-- [no] Weryfikacja wyglądu na GitHubie
+- [x] Weryfikacja wyglądu na GitHubie
 
 ### Tabela danych
 | Nazwa zmiennej | Typ danych | Opis |
@@ -37,11 +37,17 @@ Oto krótki tekst w ramach kolejnej podsekcji, w której prezentujemy elementy s
 
 ### Blokowe wzory matematyczne (Display Math)
 
-$$ \int_{a}^{b} f(x) \, dx = F(b) - F(a) $$
+$$ 
+\int_{a}^{b} f(x) \, dx = F(b) - F(a) 
+$$
 
-$$ \sum_{i=1}^{n} i = \frac{n(n+1)}{2} $$
+$$
+\sum_{i=1}^{n} i = \frac{n(n+1)}{2} 
+$$
 
-$$ A = \begin{pmatrix} a & b \\ c & d \end{pmatrix} $$
+$$
+A = \begin{pmatrix} a & b \\ c & d \end{pmatrix} 
+$$
 
 ### Fragment kodu w języku Python
 
