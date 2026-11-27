@@ -1,60 +1,34 @@
-# Raport: Symulacja rzutu ukośnego
+# Raport z symulacji rzutu ukośnego
 
-## 1. Wstęp i założenia początkowe
-Celem niniejszego raportu jest analiza ruchu ciała rzuconego ukośnie w polu grawitacyjnym Ziemi. Badany jest przypadek ruchu idealnego (w próżni, bez oporu powietrza) oraz ruchu z uwzględnieniem siły oporu powietrza.
+## 1. Wstęp i parametry początkowe
+Celem niniejszego ćwiczenia jest analiza ruchu pocisku rzuconego ukośnie w polu grawitacyjnym Ziemi, zarówno w warunkach idealnych (bez oporu powietrza), jak i z uwzględnieniem oporu ośrodka.
 
-Zgodnie z wytycznymi zadania, parametry początkowe dla mojego numeru indeksu wynoszą:
-* **Prędkość początkowa ($v_0$):** [33] m/s
-* **Kąt początkowy ($\alpha$):** [76]°
-* **Przyspieszenie ziemskie ($g$):** $9.81\ \text{m/s}^2$
-
----
-
-## 2. Model matematyczny: Rzut ukośny bez oporu powietrza
-
-W próżni na ciało działa wyłącznie siła grawitacji. Równania ruchu w układzie kartezjańskim przyjmują postać:
-
-$$x(t) = v_0 \cdot \cos(\alpha) \cdot t$$
-
-$$y(t) = v_0 \cdot \sin(\alpha) \cdot t - \frac{1}{2} g t^2$$
+Parametry symulacji wyznaczone na podstawie numeru indeksu ($337645$):
+* **Prędkość początkowa ($v_0$):** $33 \, \text{m/s}$
+* **Kąt rzutu ($\alpha$):** $45^\circ$
+* **Przyspieszenie ziemskie ($g$):** $9.81 \, \text{m/s}^2$
 
 ---
 
-## 3. Model matematyczny: Rzut ukośny z oporem powietrza
+## 2. Rzut ukośny bez oporu powietrza
+W modelowaniu teoretycznym pomijamy oddziaływanie cząsteczek powietrza. Równania ruchu w postaci parametrycznej przyjmują postać:
 
-Uwzględniając siłę oporu powietrza proporcjonalną do prędkości ($\mathbf{F}_{op} = -b \mathbf{v}$), równania stają się układem równań różniczkowych, które najwygodniej rozwiązać numerycznie za pomocą Pythona.
+$$x(t) = v_0 \cos(\alpha) \cdot t$$
+$$y(t) = v_0 \sin(\alpha) \cdot t - \frac{1}{2} g t^2$$
+
+### Wykres trajektorii ruchu (bez oporu)
+![Wykres bez oporu](wykres_bez_oporu.png)
 
 ---
 
-## 4. Symulacja numeryczna i wykresy
+## 3. Rzut ukośny z oporem powietrza
+W rzeczywistych warunkach na poruszający się obiekt działa siła oporu powietrza proporcjonalna do kwadratu prędkości ($F_{op} = k \cdot v^2$). Do rozwiązania układu równań różniczkowych zastosowano numeryczną metodę Eulera z krokiem czasowym $\Delta t = 0.001 \, \text{s}$.
 
-Poniżej znajduje się skrypt w języku Python generujący trajektorię ruchu:
+### Porównanie trajektorii (z oporem i bez oporu)
+![Wykres z oporem](wykres_z_oporem.png)
 
-```python
-import numpy as np
-import matplotlib.pyplot as plt
+---
 
-# Parametry początkowe
-v0 = 12.0  # zmień na swoje dwie pierwsze cyfry indeksu
-alpha_deg = 45.0  # zmień na swoje dwie ostatnie cyfry indeksu
-alpha = np.radians(alpha_deg)
-g = 9.81
-
-# Czas symulacji
-t_max = (2 * v0 * np.sin(alpha)) / g
-t = np.linspace(0, t_max, 500)
-
-# Rzut bez oporu
-x = v0 * np.cos(alpha) * t
-y = v0 * np.sin(alpha) * t - 0.5 * g * t**2
-
-# Wykres
-plt.figure(figsize=(8, 5))
-plt.plot(x, y, label='Bez oporu powietrza', color='blue')
-plt.title('Tor ruchu w rzucie ukośnym')
-plt.xlabel('Zasięg x [m]')
-plt.ylabel('Wysokość y [m]')
-plt.grid(True)
-plt.legend()
-plt.savefig('wykres_tor.png')
-plt.show()
+## 4. Podsumowanie i wnioski
+1. Uwzględnienie oporu powietrza znacząco skraca maksymalny zasięg oraz wysokość, jaką osiąga pocisk.
+2. Symulacja numeryczna pozwala na dokładne odwzorowanie rzeczywistego toru lotu, którego nie da się opisać analitycznie za pomocą prostych wzorów algebraicznych.
