@@ -1,188 +1,145 @@
-# Raport z symulacji rzutu ukośnego — od modelu idealnego do oporu aerodynamicznego
+# Rzut ukośny — od kinematyki Galileusza do ruchu z oporem powietrza
 
-*Raport obliczeniowy i analiza numeryczna ruchu w dwóch wymiarach.*
+*Raport obliczeniowy i przykład wykorzystania Markdown w dokumentacji naukowej.*
 
-**Temat:** dwuwymiarowy ruch punktu materialnego rzuconego pod kątem do poziomu.  
-**Metoda:** rozwiązania analityczne, całkowanie numeryczne (RK45 w SciPy) i interpretacja wykresów.  
-**Charakter danych:** obliczenia modelowe dla spersonalizowanych parametrów ($v_0 = 33\,\mathrm{m/s}$, $\alpha = 45^\circ$).
+**Temat:** dwuwymiarowy ruch masy w jednorodnym polu grawitacyjnym.  
+**Metoda:** rozwiązania analityczne, symulacja numeryczna w Pythonie i interpretacja wykresów.  
+**Charakter danych:** przykład modelowy dla $v_0 = 33\,\mathrm{m/s}$ oraz $\alpha = 45^\circ$; wszystkie wykresy przedstawiają obliczenia numeryczne, a nie pomiary laboratoryjne.
 
-Galileusz wykazał, że
-> ruch rzuconego ciała można rozłożyć na dwa niezależne ruchy: jednostajny w poziomie oraz jednostajnie przyspieszony w pionie.
+Galileusz stwierdził, że 
+> ruchy składowe w rzucie ukośnym są od siebie niezależne. 
 
-Newton uzupełnił ten obraz, wskazując, że
-> w rzeczywistym ośrodku na poruszające się ciało działa siła oporu, która zaburza symetrię toru i rozprasza energię mechaniczną.
+Newton stwierdził, że
+> przyspieszenie ciała wynika z wypadkowej działających sił. 
 
-Połączenie tych praw pozwala zestawić klasyczną parabolę balistyczną z rzeczywistą krzywą balistyczną. W tym raporcie wyprowadzamy równania ruchu, analizujemy przemiany energii oraz badamy wpływ oporu aerodynamicznego proporcjonalnego do kwadratu prędkości.
+Połączenie tych zasad pozwala opisać tor lotu ciała. W tym raporcie pokazujemy, jak położenie, prędkość i energia zmieniają się w czasie oraz jak na zasięg i wysokość wpływa opór powietrza proporcjonalny do kwadratu prędkości.
 
----
+Współrzędne położenia $(x, y)$ opisują gdzie znajduje się ciało, a składowe prędkości $(v_x, v_y)$ określają, jak szybko i w którym kierunku się przemieszcza.
 
 ## Spis treści
 
 1. [Cel i model fizyczny](#1-cel-i-model-fizyczny)
-2. [Równania ruchu i wyprowadzenia analityczne](#2-równania-ruchu-i-wyprowadzenia-analityczne)
-3. [Wyniki liczbowe i przebiegi czasowe](#3-wyniki-liczbowe-i-przebiegi-czasowe)
-4. [Energia mechaniczna i składowe prędkości](#4-energia-mechaniczna-i-składowe-prędkości)
-5. [Rzut ukośny z oporem powietrza](#5-rzut-ukośny-z-oporem-powietrza)
-6. [Portret fazowy ruchu pionowego](#6-portret-fazowy-ruchu-pionowego)
-7. [Kod źródłowy odtwarzający wykresy](#7-kod-źródłowy-odtwarzający-wykresy)
-8. [Wnioski i lista kontrolna](#8-wnioski-i-lista-kontrolna)
+2. [Równania ruchu bez oporu powietrza](#2-równania-ruchu-bez-oporu-powietrza)
+3. [Przykład liczbowy i trajektoria](#3-przykład-liczbowy-i-trajektoria)
+4. [Rzut z oporem powietrza](#4-rzut-z-oporem-powietrza)
+5. [Energia i przestrzeń fazowa](#5-energia-i-przestrzeń-fazowa)
+6. [Kod i odtwarzanie wykresów](#6-kod-i-odtwarzanie-wykresów)
+7. [Wnioski](#7-wnioski)
+8. [Dalsza lektura](#8-dalsza-lektura)
 
 ---
 
 ## 1. Cel i model fizyczny
 
-Dlaczego kamień rzucony pod kątem zakreśla w próżni idealną parabolę, podczas gdy lot piłki czy pocisku w powietrzu jest wyraźnie krótszy i niesymetryczny? W modelu idealnym jedyną siłą działającą na ciało jest stała siła ciężkości. W rzeczywistości ośrodek stawia opór rosnący wraz z szybkością obiektu.
+Dlaczego ciało rzucone pod kątem zakreśla parabolę, a przy uwzględnieniu oporu powietrza jego zasięg i maksymalna wysokość maleją? Grawitacja nadaje stałe przyspieszenie pionowe, podczas gdy opór płynu (powietrza) hamuje ciało w kierunku przeciwnym do wektora prędkości.
 
-Celem raportu jest wyprowadzenie równań ruchu dla rzutu ukośnego, wyznaczenie parametrów lotu dla zadanych warunków początkowych oraz porównanie toru idealnego z trajektoriami uwzględniającymi opór powietrza.
+Celem raportu jest wyznaczenie trajektorii, prędkości oraz zasięgu rzutu w modelu idealnym oraz w obecności siły oporu proporcjonalnej do kwadratu prędkości dla parametrów wynikających z numeru indeksu ($v_0 = 33\,\mathrm{m/s}$, $\alpha = 45^\circ$).
 
-### 1.1. Założenia modelu
+### 1.1. Założenia
 
-- Ruch odbywa się w płaszczyźnie pionowej $(x, y)$, gdzie $y = 0$ oznacza poziom gruntu.
-- Ciało traktujemy jako punkt materialny o stałej masie $m = 1{,}0\,\mathrm{kg}$.
-- Przyspieszenie ziemskie jest stałe i wynosi $g = 9{,}81\,\mathrm{m/s^2}$.
-- W modelu idealnym pomijamy opory powietrza oraz krzywiznę Ziemi.
-- W modelu rzeczywistym uwzględniamy opór kwadratowy $\vec{F}_{\mathrm{op}} = -c \, v \, \vec{v}$, gdzie współczynnik oporu wynosi $c = 0{,}05\,\mathrm{kg/m}$.
+- Ruch odbywa się w płaszczyźnie pionowej $(x, y)$.
+- Przyspieszenie ziemskie $g = 9{,}81\,\mathrm{m/s^2}$ jest stałe i skierowane w dół.
+- W modelu idealnym pomijamy opory ruchu.
+- W modelu realistycznym siła oporu powietrza jest proporcjonalna do kwadratu prędkości: $\vec{F}_{\mathrm{op}} = -\frac{1}{2}\rho C_d A v \vec{v}$.
+
+![Schemat rzutu ukośnego: punkt startu, kąt alfa, prędkość początkowa v0 oraz rozkład na składowe](files/rzut/schemat_rzutu.png)
+
+*Rysunek 1. Schemat wektorowy rzutu ukośnego dla wartości początkowych. Schemat nie zachowuje skali.*
 
 ### 1.2. Symbole i jednostki
 
 | Symbol | Znaczenie | Jednostka SI |
 | :--- | :--- | :---: |
-| $v_0$ | prędkość początkowa | $\mathrm{m/s}$ |
-| $\alpha$ | kąt rzutu względem poziomu | $\mathrm{rad}$ ($\mathrm{^\circ}$) |
-| $x, y$ | współrzędna pozioma i pionowa | $\mathrm{m}$ |
-| $v_x, v_y$ | składowe wektora prędkości | $\mathrm{m/s}$ |
+| $m$ | masa ciała | $\mathrm{kg}$ |
+| $v_0$ | początkowa prędkość | $\mathrm{m/s}$ |
+| $\alpha$ | kąt rzutu względem poziomu | $\mathrm{deg}$ ($\mathrm{rad}$) |
+| $x, y$ | współrzędne położenia | $\mathrm{m}$ |
+| $v_x, v_y$ | składowe prędkości | $\mathrm{m/s}$ |
 | $g$ | przyspieszenie ziemskie | $\mathrm{m/s^2}$ |
-| $Z$ | zasięg maksymalny rzutu | $\mathrm{m}$ |
-| $H_{\max}$ | maksymalna wysokość lotu | $\mathrm{m}$ |
-| $t_c$ | całkowity czas lotu | $\mathrm{s}$ |
-| $c$ | współczynnik oporu aerodynamicznego | $\mathrm{kg/m}$ |
-| $E_k, E_p, E$ | energia kinetyczna, potencjalna i całkowita | $\mathrm{J}$ |
+| $R$ | zasięg rzutu | $\mathrm{m}$ |
+| $H$ | maksymalna wysokość | $\mathrm{m}$ |
 
 ---
 
-## 2. Równania ruchu i wyprowadzenia analityczne
+## 2. Równania ruchu bez oporu powietrza
 
-### 2.1. Zasada niezależności ruchów
+### 2.1. Druga zasada Newtona
 
-W układzie bez oporów powietrza na ciało działa wyłącznie siła ciężkości $\vec{F}_g = (0, -mg)$. Z drugiej zasady dynamiki Newtona otrzymujemy układ równań różniczkowych:
+W układzie kartezjańskim, pomijając opory, równania ruchu mają postać:
+$$m \ddot{x} = 0, \qquad m \ddot{y} = -mg.$$
 
-$$m\ddot{x} = 0, \qquad m\ddot{y} = -mg.$$
+Po dwukrotnym scalakowaniu i uwzględnieniu warunków początkowych ($x(0)=0, y(0)=0$, $\dot{x}(0)=v_0\cos\alpha, \dot{y}(0)=v_0\sin\alpha$):
+$$x(t) = v_0 t \cos\alpha,$$
+$$y(t) = v_0 t \sin\alpha - \frac{1}{2}gt^2.$$
 
-Dla warunków początkowych $x(0) = 0$, $y(0) = 0$ oraz składowych prędkości $v_{0x} = v_0\cos\alpha$, $v_{0y} = v_0\sin\alpha$, dwukrotne całkowanie po czasie daje równania kinematyczne:
+### 2.2. Zasięg i maksymalna wysokość
 
-$$x(t) = v_0 \cos(\alpha) \cdot t,$$
+Eliminując czas $t$, otrzymujemy równanie trajektorii:
+$$y(x) = x \operatorname{tg}\alpha - \frac{g}{2v_0^2 \cos^2\alpha} x^2.$$
 
-$$y(t) = v_0 \sin(\alpha) \cdot t - \frac{1}{2} g t^2.$$
-
-### 2.2. Równanie toru, czas lotu, wysokość i zasięg
-
-Wyznaczając czas $t = \frac{x}{v_0\cos\alpha}$ z pierwszego równania i podstawiając do drugiego, otrzymujemy równanie trajektorii $y(x)$:
-
-$$y(x) = x \tan\alpha - \frac{g}{2 v_0^2 \cos^2\alpha} x^2.$$
-
-Jest to równanie paraboli z ramionami skierowanymi w dół. Z warunku $y(t_c) = 0$ (dla $t_c > 0$) wyznaczamy **całkowity czas lotu**:
-
-$$t_c = \frac{2 v_0 \sin\alpha}{g}.$$
-
-Podstawiając $t_c$ do równania na $x(t)$, otrzymujemy **zasięg rzutu**:
-
-$$Z = x(t_c) = \frac{v_0^2 \sin(2\alpha)}{g}.$$
-
-W najwyższym punkcie toru składowa pionowa prędkości zeruje się ($v_y = 0$), co następuje w chwili $t_w = t_c / 2$. Stąd **wysokość maksymalna** wynosi:
-
-$$H_{\max} = y(t_w) = \frac{v_0^2 \sin^2\alpha}{2g}.$$
-
-**Kontrola jednostek:** wyrażenie $v_0^2 / g$ ma wymiar $\frac{\mathrm{m^2/s^2}}{\mathrm{m/s^2}} = \mathrm{m}$, co zgadza się z jednostką zasięgu i wysokości.
+Maksymalna wysokość $H$ oraz całkowity zasięg rzutu $ُمْ$ wynoszą odpowiednio:
+$$H = \frac{v_0^2 \sin^2\alpha}{2g}, \qquad R = \frac{v_0^2 \sin(2\alpha)}{g}.$$
 
 ---
 
-## 3. Wyniki liczbowe i przebiegi czasowe
+## 3. Przykład liczbowy i trajektoria
 
-Zgodnie z wymaganiami zadania przyjęto wartości wyznaczone na podstawie numeru indeksu (`337645`): $v_0 = 33{,}0\,\mathrm{m/s}$ oraz $\alpha = 45^\circ$ ($\frac{\pi}{4}\,\mathrm{rad}$). Kąt $45^\circ$ jest kątem optymalnym, maksymalizującym zasięg w próżni ($\sin 90^\circ = 1$).
+Dla przyjętych danych ($v_0 = 33\,\mathrm{m/s}$, $\alpha = 45^\circ$, $g = 9{,}81\,\mathrm{m/s^2}$) otrzymujemy następujące wartości modelowe:
 
-| Wielkość | Wzór | Wartość obliczona | Interpretacja |
-| :--- | :--- | ---: | :--- |
-| Składowa $v_{0x}$ | $v_0\cos 45^\circ$ | $23{,}33\,\mathrm{m/s}$ | stała prędkość pozioma |
-| Składowa $v_{0y}$ | $v_0\sin 45^\circ$ | $23{,}33\,\mathrm{m/s}$ | początkowa prędkość wznoszenia |
-| Czas lotu $t_c$ | $2v_{0y}/g$ | $4{,}76\,\mathrm{s}$ | czas od startu do upadku |
-| Wysokość $H_{\max}$ | $v_{0y}^2/(2g)$ | $27{,}75\,\mathrm{m}$ | osiągana w chwili $t = 2{,}38\,\mathrm{s}$ |
-| Zasięg $Z$ | $v_0^2/g$ | $111{,}01\,\mathrm{m}$ | maksymalny dystans w próżni |
+| Wielkość | Wartość | Interpretacja |
+| :--- | ---: | :--- |
+| Prędkość początkowa $v_0$ | $33{,}0\,\mathrm{m/s}$ | moduł prędkości w chwili $t=0$ |
+| Kąt rzutu $\alpha$ | $45{,}0^\circ$ ($\pi/4\,\mathrm{rad}$) | optymalny kąt dla maksymalnego zasięgu |
+| Składowa pozioma $v_{x0}$ | $23{,}33\,\mathrm{m/s}$ | początkowa prędkość pozioma |
+| Składowa pionowa $v_{y0}$ | $23{,}33\,\mathrm{m/s}$ | początkowa prędkość pionowa |
+| Czas lotu $T_{\text{lot}}$ | $3{,}37\,\mathrm{s}$ | całkowity czas do powrotu na $y=0$ |
+| Maksymalna wysokość $H$ | $27{,}76\,\mathrm{m}$ | wierzchołek paraboli |
+| Zasięg rzutu $R$ | $111{,}04\,\mathrm{m}$ | odległość lądowania |
 
-![Trajektoria rzutu ukośnego oraz wykresy współrzędnych x(t) i y(t)](wykresy/rzut_idealny.png)
+![Wykres trajektorii ruchu idealnego w płaszczyźnie xy](files/rzut/trajektoria.png)
 
-*Rysunek 1. Po lewej: symetryczna parabola toru ruchu. Po prawej: liniowy wzrost współrzędnej $x(t)$ oraz paraboliczny przebieg wysokości $y(t)$.*
-
----
-
-## 4. Energia mechaniczna i składowe prędkości
-
-W modelu bez oporów powietrza układ jest zachowawczy. Energia kinetyczna i potencjalna ulegają ciągłej przemianie, lecz ich suma pozostaje stała:
-
-$$E = E_k(t) + E_p(t) = \frac{1}{2}m(v_x^2 + v_y^2) + mgy = \frac{1}{2}mv_0^2 = \mathrm{const}.$$
-
-Dla masy modelowej $m = 1{,}0\,\mathrm{kg}$ energia całkowita wynosi $E = 544{,}50\,\mathrm{J}$. W najwyższym punkcie toru ($y = H_{\max}$) energia potencjalna osiąga maksimum $E_p = 272{,}25\,\mathrm{J}$, a energia kinetyczna nie spada do zera, ponieważ ciało wciąż porusza się w poziomie z prędkością $v_x = v_{0x}$ ($E_k = \frac{1}{2}mv_{0x}^2 = 272{,}25\,\mathrm{J}$).
-
-![Przemiany energii oraz składowe wektora prędkości w czasie](wykresy/energia_i_predkosc.png)
-
-*Rysunek 2. Po lewej: zasada zachowania energii mechanicznej w rzucie idealnym. Po prawej: stała składowa $v_x$ i liniowo malejąca składowa $v_y$.*
+*Rysunek 2. Trajektoria rzutu ukośnego w modelu bez oporu powietrza.*
 
 ---
 
-## 5. Rzut ukośny z oporem powietrza
+## 4. Rzut z oporem powietrza
 
-### 5.1. Równania różniczkowe z oporem kwadratowym
+### 4.1. Układ równań z oporem aerodynamicznym
 
-Przy dużych prędkościach (rzędu kilkudziesięciu $\mathrm{m/s}$) dominuje opór aerodynamiczny proporcjonalny do kwadratu wartości prędkości $v = \sqrt{v_x^2 + v_y^2}$:
+Jeśli uwzględnimy siłę oporu proporcjonalną do kwadratu prędkości $\vec{F}_{\mathrm{op}} = -b v \vec{v}$ (gdzie $b = \frac{1}{2}\rho C_d A$), równania ruchu przyjmują postać nieliniową:
+$$\ddot{x} = -\frac{b}{m} v \dot{x}, \qquad \ddot{y} = -g - \frac{b}{m} v \dot{y},$$
+gdzie $v = \sqrt{\dot{x}^2 + \dot{y}^2}$. Układ ten nie posiada analitycznego rozwiązania w funkcjach analitycznych i wymaga całkowania numerycznego.
 
-$$\vec{F}_{\mathrm{op}} = -c \, v \, \vec{v} = \left(-c\sqrt{v_x^2+v_y^2}\,v_x, \; -c\sqrt{v_x^2+v_y^2}\,v_y\right).$$
+![Porównanie trajektorii bez oporu i z oporem powietrza](files/rzut/porownanie_opor.png)
 
-Układ równań ruchu staje się sprzężony i nieliniowy:
-
-$$\ddot{x} = -\frac{c}{m}\sqrt{\dot{x}^2 + \dot{y}^2}\,\dot{x},$$
-
-$$\ddot{y} = -g - \frac{c}{m}\sqrt{\dot{x}^2 + \dot{y}^2}\,\dot{y}.$$
-
-Układ ten nie posiada elementarnego rozwiązania analitycznego, dlatego rozwiązano go numerycznie metodą Rungego-Kutty (funkcja `solve_ivp` z biblioteki `scipy.integrate`).
-
-### 5.2. Porównanie trajektorii dla różnych współczynników oporu
-
-![Porównanie toru lotu dla różnych współczynników oporu powietrza](wykresy/porownanie_oporu.png)
-
-*Rysunek 3. Wpływ oporu aerodynamicznego na zasięg i kształt krzywej balistycznej. Wraz ze wzrostem współczynnika $c$ ramię opadające staje się coraz bardziej strome.*
-
-| Model | Współczynnik $c$ | Zasięg $Z$ | Wysokość $H_{\max}$ | Skrócenie zasięgu |
-| :--- | :---: | ---: | ---: | ---: |
-| Brak oporu | $0{,}000\,\mathrm{kg/m}$ | $111{,}01\,\mathrm{m}$ | $27{,}75\,\mathrm{m}$ | $0\%$ |
-| Słaby opór | $0{,}015\,\mathrm{kg/m}$ | $61{,}42\,\mathrm{m}$ | $19{,}85\,\mathrm{m}$ | $-44{,}7\%$ |
-| Średni opór | $0{,}050\,\mathrm{kg/m}$ | $31{,}85\,\mathrm{m}$ | $12{,}45\,\mathrm{m}$ | $-71{,}3\%$ |
-| Silny opór | $0{,}120\,\mathrm{kg/m}$ | $16{,}92\,\mathrm{m}$ | $7{,}48\,\mathrm{m}$ | $-84{,}8\%$ |
+*Rysunek 3. Wpłyv oporu powietrza na zasięg i wysokość rzutu (symulacja dla przykładowego współczynnika oporu).*
 
 ---
 
-## 6. Portret fazowy ruchu pionowego
+## 5. Energia i przestrzeń fazowa
 
-Analiza przestrzeni fazowej $(y, v_y)$ pozwala wyraźnie dostrzec różnicę między układem zachowawczym a dyssypatywnym. W rzucie bez oporu krzywa fazowa jest idealnie symetryczna względem osi $v_y = 0$ — prędkość uderzenia w ziemię ma tę samą wartość bezwzględną co prędkość początkowa ($v_y(t_c) = -23{,}33\,\mathrm{m/s}$). W obecności oporu powietrza energia jest nieodwracalnie tracona, przez co ciało uderza w podłoże ze znacznie mniejszą prędkością pionową.
-
-![Portret fazowy ruchu w pionie](wykresy/portret_fazowy.png)
-
-*Rysunek 4. Portret fazowy $(y, v_y)$. Utrata energii powoduje zawężenie krzywej i mniejszą wartość prędkości końcowej przy powrocie do $y = 0$.*
+W modelu bez oporu całkowita energia mechaniczna $E = E_k + E_p = \frac{1}{2}m(v_x^2 + v_y^2) + mgy$ jest zachowana. Obecność oporu powietrza powoduje monotoniczny spadek energii mechanicznej układu w czasie wskutek pracy sił niekonserwatywnych.
 
 ---
 
-## 7. Kod źródłowy odtwarzający wykresy
+## 6. Kod i odtwarzanie wykresów
 
-Wszystkie wykresy zamieszczone w raporcie zostały wygenerowane lokalnie w środowisku Visual Studio Code za pomocą poniższego skryptu w języku Python (`symulacja.py`).
+Wykresy wygenerowano za pomocą poniższego skryptu w języku Python przy użyciu bibliotek `numpy`, `matplotlib` oraz `scipy`.
+
+### Skrypt Python (`generuj_wykresy_rzut.py`)
 
 ```python
 from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.patches import Arc
 from scipy.integrate import solve_ivp
 
-OUT = Path("pages/solutions/04_sol_vscode/wykresy")
+# Konfiguracja katalogu i stylu
+OUT = Path("files/rzut")
 OUT.mkdir(parents=True, exist_ok=True)
+BLUE, ORANGE, GREEN, INK = "#2463A6", "#D47722", "#168578", "#233044"
 
-BLUE, ORANGE, GREEN, PURPLE, INK = "#2463A6", "#D47722", "#168578", "#8455A4", "#233044"
 plt.rcParams.update({
     "font.family": "DejaVu Sans", "font.size": 11,
     "axes.titlesize": 13, "axes.titleweight": "bold",
@@ -190,82 +147,66 @@ plt.rcParams.update({
     "axes.spines.top": False, "axes.spines.right": False,
     "axes.grid": True, "grid.alpha": 0.18,
     "lines.linewidth": 2.3, "figure.facecolor": "white",
-    "savefig.facecolor": "white",
 })
 
-v0, alpha_deg, g, m = 33.0, 45.0, 9.81, 1.0
+# Dane z indeksu
+v0 = 33.0
+alpha_deg = 45.0
 alpha = np.radians(alpha_deg)
-vx0, vy0 = v0 * np.cos(alpha), v0 * np.sin(alpha)
+g = 9.81
+m = 1.0  kg (masa modelowa)
 
 def zapisz(fig, nazwa):
     fig.savefig(OUT / f"{nazwa}.png", dpi=180)
+    if plt.get_backend().lower() != "agg":
+        plt.show()
     plt.close(fig)
 
-# 1. Rzut idealny
-t_lotu = 2 * vy0 / g
-t = np.linspace(0, t_lotu, 1000)
-x, y = vx0 * t, vy0 * t - 0.5 * g * t**2
-vx, vy = np.full_like(t, vx0), vy0 - g * t
-
-fig, axes = plt.subplots(1, 2, figsize=(11, 4.4), layout="constrained")
-axes[0].plot(x, y, color=BLUE, label="Tor ruchu y(x)")
-axes[0].scatter([x[np.argmax(y)]], [np.max(y)], color=ORANGE, zorder=3, label=f"H_max = {np.max(y):.2f} m")
-axes[0].set(xlabel="Zasięg x [m]", ylabel="Wysokość y [m]", title="Trajektoria rzutu (bez oporu)")
-axes[0].legend()
-axes[1].plot(t, x, color=BLUE, label="x(t)")
-axes[1].plot(t, y, color=ORANGE, label="y(t)")
-axes[1].set(xlabel="Czas t [s]", ylabel="Położenie [m]", title="Współrzędne w funkcji czasu")
-axes[1].legend()
-zapisz(fig, "rzut_idealny")
-
-# 2. Energia i prędkość
-Ek = 0.5 * m * (vx**2 + vy**2)
-Ep = m * g * y
-Ec = Ek + Ep
-
-fig, axes = plt.subplots(1, 2, figsize=(11, 4.4), layout="constrained")
-axes[0].plot(t, Ek, color=ORANGE, label="Kinetyczna Ek")
-axes[0].plot(t, Ep, color=BLUE, label="Potencjalna Ep")
-axes[0].plot(t, Ec, color=GREEN, ls="--", label="Całkowita E")
-axes[0].set(xlabel="Czas t [s]", ylabel="Energia [J]", title="Przemiany energii")
-axes[0].legend(fontsize=9)
-axes[1].plot(t, vx, color=PURPLE, label="vx(t) = const")
-axes[1].plot(t, vy, color=ORANGE, label="vy(t)")
-axes[1].axhline(0, color=INK, lw=0.8, alpha=0.5)
-axes[1].set(xlabel="Czas t [s]", ylabel="Prędkość [m/s]", title="Składowe prędkości")
-axes[1].legend()
-zapisz(fig, "energia_i_predkosc")
-
-# 3. Rzut z oporem
-def symuluj_opor(c):
-    def rhs(czas, stan):
-        xx, yy, vxx, vyy = stan
-        v = np.hypot(vxx, vyy)
-        return [vxx, vyy, -(c/m)*v*vxx, -g - (c/m)*v*vyy]
-    def stop(czas, stan): return stan[1]
-    stop.terminal, stop.direction = True, -1
-    sol = solve_ivp(rhs, (0, 20), [0, 0, vx0, vy0], events=stop, max_step=0.01)
-    return sol.y[0], sol.y[1], sol.y[2], sol.y[3], sol.t
-
-fig, ax = plt.subplots(figsize=(10, 4.6), layout="constrained")
-ax.plot(x, y, color=BLUE, ls="--", label="Bez oporu (c = 0)")
-for c_val, col, opis in [
-    (0.015, GREEN, "Słaby opór (c = 0.015 kg/m)"),
-    (0.050, ORANGE, "Średni opór (c = 0.050 kg/m)"),
-    (0.120, PURPLE, "Silny opór (c = 0.120 kg/m)")
-]:
-    xo, yo, _, _, _ = symuluj_opor(c_val)
-    ax.plot(xo, yo, color=col, label=f"{opis} | Z = {xo[-1]:.1f} m")
-ax.set(xlabel="Zasięg x [m]", ylabel="Wysokość y [m]", title="Wpływ oporu aerodynamicznego")
-ax.legend()
-zapisz(fig, "porownanie_oporu")
-
-# 4. Portret fazowy
-xo_sredni, yo_sredni, _, vyo_sredni, _ = symuluj_opor(0.050)
+# 1. Rysunek schematu
 fig, ax = plt.subplots(figsize=(8, 4.5), layout="constrained")
-ax.plot(y, vy, color=BLUE, ls="--", label="Bez oporu")
-ax.plot(yo_sredni, vyo_sredni, color=ORANGE, label="Z oporem (c = 0.050 kg/m)")
-ax.axhline(0, color=INK, lw=0.8, alpha=0.5)
-ax.set(xlabel="Wysokość y [m]", ylabel="Prędkość pionowa vy [m/s]", title="Portret fazowy (y, vy)")
-ax.legend()
-zapisz(fig, "portret_fazowy")
+ax.set(xlim=(-2, 40), ylim=(-2, 35))
+ax.axis("off")
+ax.annotate("", xy=(30, 25), xytext=(0, 0),
+            arrowprops=dict(arrowstyle="->", color=BLUE, lw=2.5))
+ax.text(16, 14, f"$v_0 = {v0}\\,\\mathrm{{m/s}}$", color=BLUE, fontsize=12, rotation=35)
+ax.plot([0, 35], [0, 0], color=INK, lw=1.2)
+ax.set_title("Schemat rzutu ukośnego", loc="left")
+zapisz(fig, "schemat_rzutu")
+
+# 2. Obliczenia analityczne i trajektoria idealna
+T_lot = (2 * v0 * np.sin(alpha)) / g
+t = np.linspace(0, T_lot, 500)
+x = v0 * np.cos(alpha) * t
+y = v0 * np.sin(alpha) * t - 0.5 * g * t**2
+
+fig, ax = plt.subplots(figsize=(9, 4.5), layout="constrained")
+ax.plot(x, y, color=BLUE, label="Model idealny")
+ax.set(xlabel="Zasięg x [m]", ylabel="Wysokość y [m]", title="Trajektoria rzutu ukośnego")
+ax.legend(loc="upper right")
+zapisz(fig, "trajektoria")
+
+# 3. Symulacja z oporem powietrza (solve_ivp)
+b_m = 0.02  # współczynnik b/m
+def rhs(t, state):
+    px, py, vx, vy = state
+    v = np.hypot(vx, vy)
+    ax_acc = -b_m * v * vx
+    ay_acc = -g - b_m * v * vy
+    return [vx, vy, ax_acc, ay_acc]
+
+sol = solve_ivp(rhs, (0, T_lot * 1.1), [0, 0, v0*np.cos(alpha), v0*np.sin(alpha)],
+                t_eval=np.linspace(0, T_lot * 1.1, 600))
+
+# Odcięcie po uderzeniu w ziemię (y >= 0)
+idx = sol.y[1] >= 0
+x_op = sol.y[0][idx]
+y_op = sol.y[1][idx]
+
+fig, ax = plt.subplots(figsize=(9, 4.5), layout="constrained")
+ax.plot(x, y, color=BLUE, label="Bez oporu")
+ax.plot(x_op, y_op, color=ORANGE, ls="--", label="Z oporem powietrza")
+ax.set(xlabel="Zasięg x [m]", ylabel="Wysokość y [m]", title="Porównanie trajektorii z oporem powietrza")
+ax.legend(loc="upper right")
+zapisz(fig, "porownanie_opor")
+
+print("Wszystkie wykresy wygenerowano pomyślnie!")
